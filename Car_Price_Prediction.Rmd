@@ -1,0 +1,397 @@
+---
+title: "Car Price Prediction"
+author: "Mohammad Amir"
+date: "09/09/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Libraries
+```{r}
+library(caret)
+library(ggplot2)
+library(gridExtra)
+library(dplyr)
+```
+
+# Load Data
+```{r}
+df <- read.csv("Vehicle_Retail_Price_Assignment.csv")
+```
+
+# Summary Statistics of Data
+```{r}
+dim(df) #number of rows and columns in data
+head(df) #first 6 rows of data
+str(df) #structure of data
+summary(df) #statistical summary of data
+```
+
+# Check for Missing Data
+```{r}
+#checking for NAs
+colSums(is.na(df)) #there is no NA's in data
+```
+
+# Convert Categorical Variables to Factor
+```{r}
+#convert character variables in factor
+df[sapply(df, is.character)] <- lapply(df[sapply(df, is.character)], 
+                                       as.factor)
+df$symboling <- as.factor(df$symboling)
+str(df)
+```
+
+# Exploratory Data Analysis
+
+## Exploring the Effect of Car Dimensions on Price 
+```{r}
+#effect of car dimensions on price
+d1 <- ggplot(df, aes(x = wheelbase, y = price)) + 
+  geom_point() + 
+  stat_smooth(method="lm", se=F) + theme_minimal()
+
+d2 <- ggplot(df, aes(x = carlength, y = price)) + 
+  geom_point() + 
+  stat_smooth(method="lm", se=F) + theme_minimal()
+
+d3 <- ggplot(df, aes(x = carwidth,  y = price)) + 
+  geom_point() + 
+  stat_smooth(method="lm", se=F) + theme_minimal()
+
+d4 <- ggplot(df, aes(x = carheight, y = price)) + 
+  geom_point() + 
+  stat_smooth(method="lm", se=F) + theme_minimal()
+
+d5 <- ggplot(df, aes(x = curbweight, y = price)) + 
+  geom_point() + 
+  stat_smooth(method="lm", se=F) + theme_minimal()
+
+
+grid.arrange(d1, d2, d3, d4, d5, top = "Variation of Price with Car Dimensions")
+```
+
+## Engine Technical Specifications on Price
+```{r}
+#engine technical specifications
+et1 <- ggplot(df, aes(x = boreratio, y = price)) + 
+  geom_point() + 
+  stat_smooth(method="lm", se=F) + theme_minimal()
+
+et2 <- ggplot(df, aes(x = stroke, y = price)) + 
+  geom_point() + 
+  stat_smooth(method="lm", se=F) + theme_minimal()
+
+et3 <- ggplot(df, aes(x = compressionratio, y = price)) + 
+  geom_point() + 
+  stat_smooth(method="lm", se=F) + theme_minimal()
+
+et4 <- ggplot(df, aes(x = horsepower, y = price)) + 
+  geom_point() + 
+  stat_smooth(method="lm", se=F) + theme_minimal()
+
+et5 <- ggplot(df, aes(x = peakrpm, y = price)) + 
+  geom_point() + 
+  stat_smooth(method="lm", se=F) + theme_minimal()
+
+grid.arrange(et1, et2, et3, et4, et5, top = "Price with Technical Engine Specification")
+```
+
+## Mean Price Based on Engine Specification
+```{r}
+c1 <- df %>% group_by(doornumber) %>% summarise(mean_price = mean(price)) %>% {
+      ggplot(., aes(x = doornumber, y = mean_price, fill = doornumber)) + 
+      geom_bar(stat = "identity") +
+      theme_minimal() + theme(legend.position = "none")
+}
+
+c2 <- df %>% group_by(carbody) %>% summarise(mean_price = mean(price)) %>% {
+  ggplot(., aes(x = carbody, y = mean_price, fill = carbody)) + 
+    geom_bar(stat = "identity") +
+    theme_minimal() + theme(legend.position = "none")
+}
+
+c3 <- df %>% group_by(drivewheel) %>% summarise(mean_price = mean(price)) %>% {
+  ggplot(., aes(x = drivewheel, y = mean_price, fill = drivewheel)) + 
+    geom_bar(stat = "identity") +
+    theme_minimal() + theme(legend.position = "none")
+}
+
+c4 <- df %>% group_by(enginelocation) %>% summarise(mean_price = mean(price)) %>% {
+  ggplot(., aes(x = enginelocation, y = mean_price, fill = enginelocation)) + 
+    geom_bar(stat = "identity") +
+    theme_minimal() + theme(legend.position = "none")
+}
+
+grid.arrange(c1, c2, c3, c4, top = "Mean Price for Different Configuations")
+```
+
+## MPG with Price
+```{r}
+#mpg with price
+mpg1 <- ggplot(df, aes(x = citympg, y = price)) + 
+  geom_point() + 
+  stat_smooth(method="lm", se=F) + theme_minimal()
+
+mpg2 <- ggplot(df, aes(x = highwaympg, y = price)) + 
+  geom_point() + 
+  stat_smooth(method="lm", se=F) + theme_minimal()
+
+grid.arrange(mpg1, mpg2, top = "Price with MPG")
+```
+
+## Effect of Symboling on Price
+```{r}
+#symboling
+df %>% group_by(symboling) %>% summarise(mean_price = mean(price)) %>% {
+  ggplot(., aes(x = symboling, y = mean_price, fill = symboling)) + 
+    geom_bar(stat = "identity") +
+    theme_minimal() + theme(legend.position = "none")
+}
+```
+
+## Boxplots to Show Variation of Price with Different Factors
+```{r}
+#boxplots
+box1 <- df %>% group_by(symboling)  %>% {
+        ggplot(., aes(x = symboling, y = price, fill = symboling)) + 
+        geom_boxplot() +
+        theme_minimal() + theme(legend.position = "none")
+}
+box1
+
+
+box2 <- df %>% group_by(fueltype)  %>% {
+    ggplot(., aes(x = fueltype, y = price, fill = fueltype)) + 
+    geom_boxplot() +
+    theme_minimal() + theme(legend.position = "none")
+}
+
+box3 <- df %>% group_by(aspiration)  %>% {
+  ggplot(., aes(x = aspiration, y = price, fill = aspiration)) + 
+    geom_boxplot() +
+    theme_minimal() + theme(legend.position = "none")
+}
+
+box4 <- df %>% group_by(doornumber)  %>% {
+  ggplot(., aes(x = doornumber, y = price, fill = doornumber)) + 
+    geom_boxplot() +
+    theme_minimal() + theme(legend.position = "none")
+}
+
+box5 <- df %>% group_by(carbody)  %>% {
+  ggplot(., aes(x = carbody, y = price, fill = carbody)) + 
+    geom_boxplot() +
+    theme_minimal() + theme(legend.position = "none")
+}
+
+box6 <- df %>% group_by(drivewheel)  %>% {
+  ggplot(., aes(x = drivewheel, y = price, fill = drivewheel)) + 
+    geom_boxplot() +
+    theme_minimal() + theme(legend.position = "none")
+}
+
+box7 <- df %>% group_by(enginelocation)  %>% {
+  ggplot(., aes(x = enginelocation, y = price, fill = enginelocation)) + 
+    geom_boxplot() +
+    theme_minimal() + theme(legend.position = "none")
+}
+
+box8 <- df %>% group_by(enginetype)  %>% {
+  ggplot(., aes(x = enginetype, y = price, fill = enginetype)) + 
+    geom_boxplot() +
+    theme_minimal() + theme(legend.position = "none")
+}
+
+box9 <- df %>% group_by(cylindernumber)  %>% {
+  ggplot(., aes(x = cylindernumber, y = price, fill = cylindernumber)) + 
+    geom_boxplot() +
+    theme_minimal() + theme(legend.position = "none")
+}
+
+box10 <- df %>% group_by(fuelsystem)  %>% {
+  ggplot(., aes(x = fuelsystem, y = price, fill = fuelsystem)) + 
+    geom_boxplot() +
+    theme_minimal() + theme(legend.position = "none")
+}
+
+
+
+
+```
+
+```{r}
+grid.arrange(box4, box5, box6, box7, top = "Variation of Price for Different Configurations")
+```
+
+```{r}
+grid.arrange(box2, box3, box8, box9, box10, top = "Variation of Price for Different Engine Specifications")
+```
+
+# Correlation Analysis
+```{r}
+#correlation Analysis
+numericData <- df[,sapply(df, is.numeric)] #filter all numeric vars
+numericData <- numericData[, -c(1, 15)] #drop the id column and dependent var
+
+library(corrplot)
+corMat <- cor(numericData) #correlation matrix
+corrplot(corMat, method = "number", type = "lower") #plot of corr matrix
+highlyCorrelated <- findCorrelation(corMat, cutoff = 0.7) #find highly correlated
+highlyCorCol <- colnames(numericData)[highlyCorrelated]
+highlyCorCol
+```
+
+# Feature Selection
+<p>Feature selection is done using RFE (Recursive Feature Elimination)</p>
+
+## Preprocess the Data for RFE
+```{r}
+library(caret)
+x <- df[, -c(1, 3, 26)] #drop car_ID, CarName and Price (Dependent Var)
+
+#Convert Fators to Numeric for lmFuncs
+x$symboling <- as.numeric(x$symboling)
+x$fueltype  <- as.numeric(x$fueltype)
+x$aspiration<- as.numeric(x$aspiration)
+x$doornumber<- as.numeric(x$doornumber)
+x$carbody   <- as.numeric(x$carbody)
+x$drivewheel<- as.numeric(x$drivewheel)
+x$enginelocation<- as.numeric(x$enginelocation)
+x$enginetype<- as.numeric(x$enginetype)
+x$cylindernumber<- as.numeric(x$cylindernumber)
+x$fuelsystem<- as.numeric(x$fuelsystem)
+
+#Normalize Data
+normalization <- preProcess(x)
+x <- predict(normalization, x)
+x <- as.data.frame(x) #Predictors (Independent Vars)
+y <- df[, 26] #Dependent Variable
+```
+
+## Apply RFE
+```{r}
+set.seed(5)
+lmProfile2 <- rfe(x, y,
+                  sizes = c(10:15, 20, 23),
+                  rfeControl = rfeControl(functions = lmFuncs,
+                                          rerank = TRUE,
+                                          number = 200))
+
+lmpImp <- data.frame(varImp(lmProfile2))
+lmpImp <- data.frame(variable = rownames(lmpImp), lmpImp)
+
+ggplot(data=lmpImp, 
+       aes(x=reorder(variable, 
+                     Overall), 
+           y=Overall)) +
+  geom_bar(stat="identity") + 
+  coord_flip()                 #Variable importance plot
+
+
+rownames(lmpImp) <- NULL
+predictors(lmProfile2) #list of selected variables
+ggplot(lmProfile2) #plot of RMSE with number of variables in model
+ggplot(lmProfile2, metric = "Rsquared") #plot of r-squared
+```
+
+# Random Forest
+
+## Selecting Variables from RFE and Train - Test Split
+```{r}
+selected_vars <- predictors(lmProfile2)
+#list of selected variables from RFE
+
+selected_vars <- append(selected_vars, c("price", "car_ID")) #add price to data
+df3 <- df[, selected_vars]
+library(dplyr)
+
+#train test split
+set.seed(125)
+
+train <- df3 %>% dplyr::sample_frac(.75)
+test  <- dplyr::anti_join(df3, train, by = 'car_ID')
+
+train_id <- data.frame(car_ID = train$car_ID)
+test_id  <- data.frame(car_ID = test$car_ID)
+
+train <- train[,-14]
+test  <- test[, -14]
+
+X_train <- train[, -13]
+Y_train <- train[, 13]
+
+X_test <- test[, -13]
+Y_test <- test[, 13]
+
+```
+
+## Vanilla Random Forest
+```{r}
+# Train the model 
+library(randomForest)
+
+regr <- randomForest(x = X_train, 
+                     y = Y_train)
+
+# Make prediction Train
+pred_train <- predict(regr, X_train)
+
+result_train <- data.frame(car_ID = train_id, 
+                     price = Y_train,
+                     predictions = pred_train)
+head(result_train)
+
+# Make prediction Test
+pred_test <- predict(regr, X_test)
+
+result_test <- data.frame(car_ID = test_id, 
+                     price = Y_test,
+                     predictions = pred_test)
+head(result_test)
+
+#Performance Matrices
+library(Metrics)
+print(paste0('Test RMSE: ' , rmse(result_test$price,
+                                  result_test$predictions) )) #testRMSE
+print(paste0('Train RMSE: ' , rmse(result_train$price,
+                                  result_train$predictions) )) #RMSE
+
+print(paste0('Test R2: ' ,
+             caret::postResample(result_test$predictions , result_test$price)['Rsquared'] ))
+
+print(paste0('Train R2: ' ,
+             caret::postResample(result_train$predictions , result_train$price)['Rsquared'] ))
+
+ggplot(result_test, aes(x = predictions, y = price)) + geom_point()
+```
+
+## Visualizing Actual and Predicted
+```{r}
+library(reshape2)
+
+#On Test Data
+melt_pred_test <- melt(result_test, id.vars = "car_ID")
+
+ggplot(melt_pred_test, 
+       aes(y = value, 
+           x = car_ID,
+           colour = variable)) +
+      geom_point() +
+      geom_line() +
+  ggtitle("Actual vs Predicted for Test Data")
+
+#On Train Data
+melt_pred_train <- melt(result_train, id.vars = "car_ID")
+
+ggplot(melt_pred_train, 
+       aes(y = value, 
+           x = car_ID,
+           colour = variable)) +
+      geom_point() +
+      geom_line() +
+  ggtitle("Actual vs Predicted for Train Data")
+```
